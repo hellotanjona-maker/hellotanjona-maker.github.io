@@ -42,7 +42,7 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--hero)
 /* hero */
 .hero{background:var(--hero);color:var(--hero-ink);padding:5.5rem 0 6rem}
 .hero .wrap{display:grid;grid-template-columns:1.5fr 1fr;gap:3rem;align-items:center}
-.hero h1{font-size:clamp(2.6rem,5vw,3.2rem);font-weight:800}
+.hero h1{font-size:clamp(2.6rem,7vw,5.2rem);font-weight:800}
 .hero h1 span{display:block;color:var(--accent)}
 .hero p{max-width:52ch;margin:1.6rem 0 2rem;opacity:.9;font-size:1.15rem}
 .btns{display:flex;gap:.8rem;flex-wrap:wrap}
@@ -75,14 +75,16 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--hero)
 .car-nav{display:flex;gap:.5rem;margin-bottom:2rem}
 .car-nav button{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1.3rem;cursor:pointer}
 .car-nav button:hover{border-color:var(--accent);color:var(--accent)}
-.logos{padding:2.2rem 0;border-bottom:1px solid var(--line);overflow:hidden}
+.logos{padding:2.2rem 0;border-bottom:1px solid var(--line);overflow:hidden;position:relative}
+.logos.paused .track{animation-play-state:paused}
+#pp{position:absolute;right:1rem;top:.9rem;background:var(--surface);color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:.2rem .8rem;font:500 .8rem var(--f-body);cursor:pointer;z-index:2}
+.track .ini{width:36px;height:36px;border-radius:8px;background:var(--navy);color:#fff;display:grid;place-items:center;font:800 1rem var(--f-head)}
 .logos p{text-align:center;color:var(--muted);font-size:.95rem;margin-bottom:1.2rem}
-.track{display:flex;gap:3.5rem;width:max-content;animation:slide 50s linear infinite}
+.track{display:flex;gap:3.5rem;width:max-content;animation:slide 45s linear infinite}
 .logos:hover .track{animation-play-state:paused}
 .track a{display:flex;align-items:center;gap:.7rem;text-decoration:none;color:var(--muted);font-weight:700;white-space:nowrap}
 .track img{width:36px;height:36px;border-radius:8px;background:#fff;padding:3px;object-fit:contain}
 @keyframes slide{to{transform:translateX(-50%)}}
-@media(prefers-reduced-motion:reduce){.track{animation:none}.logos{overflow-x:auto}}
 .about .wrap{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center}
 .about img,.about .ph{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:14px;background:linear-gradient(135deg,var(--navy),var(--accent))}
 .about p{color:var(--muted);margin-bottom:1rem;max-width:58ch}
@@ -153,7 +155,7 @@ footer{padding:1.6rem 0;color:var(--muted);font-size:.9rem;text-align:center}
   </div>
 </div>
 
-<div class="logos" aria-label="Logos de clients"><p>Ils m’ont fait confiance</p><div class="track" id="track"></div></div>
+<div class="logos" aria-label="Logos de clients"><p>Ils m’ont fait confiance</p><button type="button" id="pp" aria-pressed="false">Pause</button><div class="track" id="track"></div></div>
 
 <section class="about" id="apropos" style="background:var(--surface)"><div class="wrap">
   <div><h2>Un intégrateur qui comprend le métier de ses clients</h2>
@@ -257,7 +259,10 @@ cats.forEach(function(c,i){
 render("Tous");
 var tr=document.getElementById("track"),seen={};
 var logos=works.filter(function(w){var h=host(w[1]);return seen[h]?0:(seen[h]=1)});
-tr.innerHTML=logos.concat(logos).map(function(w){return '<a href="'+w[1]+'" target="_blank" rel="noopener" tabindex="-1"><img loading="lazy" alt="" src="https://www.google.com/s2/favicons?domain='+host(w[1])+'&sz=64" onerror="this.style.visibility=\'hidden\'">'+w[0]+'</a>'}).join("");
+var noIcon=["mon-assurance-obligatoire.ch","trust-assurances.com","lexus.re"];
+tr.innerHTML=logos.concat(logos).map(function(w){var h=host(w[1]);var ic=noIcon.indexOf(h)>-1?'<span class="ini">'+w[0].charAt(0)+'</span>':'<img loading="lazy" alt="" src="https://www.google.com/s2/favicons?domain='+h+'&sz=64" onerror="this.outerHTML=\'<span class=ini>'+w[0].charAt(0)+'</span>\'">';return '<a href="'+w[1]+'" target="_blank" rel="noopener" tabindex="-1">'+ic+w[0]+'</a>'}).join("");
+var lg=document.querySelector(".logos"),pp=document.getElementById("pp");
+pp.onclick=function(){var p=lg.classList.toggle("paused");pp.textContent=p?"Lecture":"Pause";pp.setAttribute("aria-pressed",p)};
 function scrollBy_(d){grid.scrollBy({left:d*(grid.clientWidth*.8),behavior:"smooth"})}
 document.getElementById("prev").onclick=function(){scrollBy_(-1)};
 document.getElementById("next").onclick=function(){scrollBy_(1)};
