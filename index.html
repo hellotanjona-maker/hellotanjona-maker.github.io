@@ -68,9 +68,18 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--hero)
 .filters button[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
 :root[data-theme="dark"] .filters button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .filters button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}}
-.grid{display:flex;gap:1.4rem;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:.5rem}
-.grid::-webkit-scrollbar{display:none}
-.grid .card{flex:0 0 min(340px,85%);scroll-snap-align:start}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem}
+@media(max-width:960px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+#realisations{scroll-margin-top:64px}
+.pager[hidden]{display:none}
+.pager{display:flex;justify-content:center;align-items:center;gap:.4rem;margin-top:2.5rem;flex-wrap:wrap}
+.pager button{min-width:44px;height:44px;padding:0 .9rem;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 1rem var(--f-body);cursor:pointer}
+.pager button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.pager button[aria-current="page"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+:root[data-theme="dark"] .pager button[aria-current="page"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pager button[aria-current="page"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}}
+.pager button:disabled{opacity:.4;cursor:default}
 .car-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap}
 .car-nav{display:flex;gap:.5rem;margin-bottom:2rem}
 .car-nav button{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1.3rem;cursor:pointer}
@@ -78,12 +87,12 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--hero)
 .logos{padding:2.2rem 0;border-bottom:1px solid var(--line);overflow:hidden;position:relative}
 .logos.paused .track{animation-play-state:paused}
 #pp{position:absolute;right:1rem;top:.9rem;background:var(--surface);color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:.2rem .8rem;font:500 .8rem var(--f-body);cursor:pointer;z-index:2}
-.track .ini{width:36px;height:36px;border-radius:8px;background:var(--navy);color:#fff;display:grid;place-items:center;font:800 1rem var(--f-head)}
+.track .ini{width:52px;height:52px;border-radius:10px;background:var(--navy);color:#fff;display:grid;place-items:center;font:800 1rem var(--f-head)}
 .logos p{text-align:center;color:var(--muted);font-size:.95rem;margin-bottom:1.2rem}
-.track{display:flex;gap:3.5rem;width:max-content;animation:slide 45s linear infinite}
+.track{display:flex;gap:4rem;align-items:center;width:max-content;animation:slide 45s linear infinite}
 .logos:hover .track{animation-play-state:paused}
 .track a{display:flex;align-items:center;gap:.7rem;text-decoration:none;color:var(--muted);font-weight:700;white-space:nowrap}
-.track img{width:36px;height:36px;border-radius:8px;background:#fff;padding:3px;object-fit:contain}
+.track img{width:52px;height:52px;border-radius:10px;background:#fff;padding:5px;object-fit:contain}
 @keyframes slide{to{transform:translateX(-50%)}}
 .about .wrap{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center}
 .about img,.about .ph{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:14px;background:linear-gradient(135deg,var(--navy),var(--accent))}
@@ -181,9 +190,10 @@ footer{padding:1.6rem 0;color:var(--muted);font-size:.9rem;text-align:center}
 <section id="realisations" style="background:var(--surface)"><div class="wrap">
   <div class="car-head"><div><h2>Réalisations</h2>
   <p class="lead">Une sélection de sites livrés pour des entreprises à La Réunion, en France, en Belgique, en Suisse et au Canada.</p></div>
-  <div class="car-nav"><button type="button" id="prev" aria-label="Réalisations précédentes">‹</button><button type="button" id="next" aria-label="Réalisations suivantes">›</button></div></div>
+  </div>
   <div class="filters" role="group" aria-label="Filtrer les réalisations" id="filters"></div>
   <div class="grid" id="grid"></div>
+  <nav class="pager" id="pager" aria-label="Pagination des réalisations"></nav>
 </div></section>
 
 <section id="methode"><div class="wrap">
@@ -243,29 +253,37 @@ var works=[
 var cats=["Tous"].concat(works.map(function(w){return w[2]}).filter(function(c,i,a){return a.indexOf(c)===i}));
 var grid=document.getElementById("grid"),fl=document.getElementById("filters");
 function host(u){return u.replace(/^https?:\/\/(www\.)?/,"").replace(/\/.*$/,"")}
-function render(cat){
+var per=9,pager=document.getElementById("pager");
+function render(cat,pg){
+  var page=pg||1,list=works.filter(function(w){return cat==="Tous"||w[2]===cat}),pages=Math.ceil(list.length/per);
   grid.innerHTML="";
-  works.filter(function(w){return cat==="Tous"||w[2]===cat}).forEach(function(w){
+  list.slice((page-1)*per,page*per).forEach(function(w){
     var a=document.createElement("a");a.className="card";a.href=w[1];a.target="_blank";a.rel="noopener";
     a.innerHTML='<div class="shot"><span>'+w[0].charAt(0)+'</span><img loading="lazy" alt="Aperçu du site '+w[0]+'" src="https://image.thum.io/get/width/700/crop/440/'+w[1]+'" onerror="this.remove()"></div><div class="info"><h3>'+w[0]+'</h3><p>'+host(w[1])+' · '+w[2]+'</p></div>';
     grid.appendChild(a);
   });
+  pager.innerHTML="";pager.hidden=pages<2;
+  function btn(label,target,opts){var b=document.createElement("button");b.type="button";b.textContent=label;opts=opts||{};
+    if(opts.aria)b.setAttribute("aria-label",opts.aria);if(opts.cur)b.setAttribute("aria-current","page");if(opts.off)b.disabled=true;
+    b.onclick=function(){render(cat,target);document.getElementById("realisations").scrollIntoView({behavior:"smooth"})};pager.appendChild(b)}
+  if(pages>1){
+    btn("‹",page-1,{aria:"Page précédente",off:page===1});
+    for(var n=1;n<=pages;n++)btn(String(n),n,{cur:n===page,aria:"Page "+n});
+    btn("›",page+1,{aria:"Page suivante",off:page===pages});
+  }
 }
 cats.forEach(function(c,i){
   var b=document.createElement("button");b.type="button";b.textContent=c;b.setAttribute("aria-pressed",i===0);
-  b.onclick=function(){fl.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed","false")});b.setAttribute("aria-pressed","true");render(c);grid.scrollLeft=0};
+  b.onclick=function(){fl.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed","false")});b.setAttribute("aria-pressed","true");render(c,1)};
   fl.appendChild(b);
 });
-render("Tous");
+render("Tous",1);
 var tr=document.getElementById("track"),seen={};
 var logos=works.filter(function(w){var h=host(w[1]);return seen[h]?0:(seen[h]=1)});
 var noIcon=["mon-assurance-obligatoire.ch","trust-assurances.com","lexus.re"];
-tr.innerHTML=logos.concat(logos).map(function(w){var h=host(w[1]);var ic=noIcon.indexOf(h)>-1?'<span class="ini">'+w[0].charAt(0)+'</span>':'<img loading="lazy" alt="" src="https://www.google.com/s2/favicons?domain='+h+'&sz=64" onerror="this.outerHTML=\'<span class=ini>'+w[0].charAt(0)+'</span>\'">';return '<a href="'+w[1]+'" target="_blank" rel="noopener" tabindex="-1">'+ic+w[0]+'</a>'}).join("");
+tr.innerHTML=logos.concat(logos).map(function(w){var h=host(w[1]);var ic=noIcon.indexOf(h)>-1?'<span class="ini" role="img" aria-label="'+w[0]+'">'+w[0].charAt(0)+'</span>':'<img loading="lazy" alt="'+w[0]+'" src="https://www.google.com/s2/favicons?domain='+h+'&sz=64" onerror="this.outerHTML=\'<span class=ini>'+w[0].charAt(0)+'</span>\'">';return '<a href="'+w[1]+'" target="_blank" rel="noopener" tabindex="-1" title="'+w[0]+'">'+ic+'</a>'}).join("");
 var lg=document.querySelector(".logos"),pp=document.getElementById("pp");
 pp.onclick=function(){var p=lg.classList.toggle("paused");pp.textContent=p?"Lecture":"Pause";pp.setAttribute("aria-pressed",p)};
-function scrollBy_(d){grid.scrollBy({left:d*(grid.clientWidth*.8),behavior:"smooth"})}
-document.getElementById("prev").onclick=function(){scrollBy_(-1)};
-document.getElementById("next").onclick=function(){scrollBy_(1)};
 document.getElementById("y").textContent=new Date().getFullYear();
 document.getElementById("theme").onclick=function(){
   var r=document.documentElement,dark=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
